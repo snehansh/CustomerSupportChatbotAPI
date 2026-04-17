@@ -5,6 +5,7 @@ using Microsoft.Extensions.AI;
 
 using Microsoft.Azure.Cosmos;
 using dotenv.net;
+using Azure.Core;
 
 var MyAllowSpecificOrigins = "_myPolicy";
 
@@ -26,13 +27,14 @@ app.UseCors();
 
 IConfigurationRoot config = new ConfigurationBuilder().AddUserSecrets<Program>().Build();
 
-DotEnv.Load();
-var envVars = DotEnv.Read();
+DotEnv.Load(); // loads .env into OS env vars (no-op if file doesn't exist)
 
-string endpoint = envVars["OPENAI_ENDPOINT"];
-string deployment = envVars["OPENAI_MODEL"];
-
-string apiKey = envVars["OPENAI_API_KEY"];
+string endpoint = Environment.GetEnvironmentVariable("OPENAI_ENDPOINT")
+    ?? throw new InvalidOperationException("OPENAI_ENDPOINT environment variable is not set.");
+string deployment = Environment.GetEnvironmentVariable("OPENAI_MODEL")
+    ?? throw new InvalidOperationException("OPENAI_MODEL environment variable is not set.");
+string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+    ?? throw new InvalidOperationException("OPENAI_API_KEY environment variable is not set.");
 
 IChatClient chatClient =
     new AzureOpenAIClient(new Uri(endpoint), new System.ClientModel.ApiKeyCredential(apiKey))
@@ -122,9 +124,8 @@ public class ChatRepository()
 
             // Load environment variables from .env file
             DotEnv.Load();
-            var envVars = DotEnv.Read();
-            string cosmosDbAccountUrl = envVars["DOCUMENT_ENDPOINT"];
-            string accountKey = envVars["ACCOUNT_KEY"];
+            string cosmosDbAccountUrl = Environment.GetEnvironmentVariable("DOCUMENT_ENDPOINT") ?? "";
+            string accountKey = Environment.GetEnvironmentVariable("ACCOUNT_KEY") ?? "";
 
             if (string.IsNullOrEmpty(cosmosDbAccountUrl) || string.IsNullOrEmpty(accountKey))
             {
@@ -183,9 +184,8 @@ public class ChatRepository()
 
             // Load environment variables from .env file
             DotEnv.Load();
-            var envVars = DotEnv.Read();
-            string cosmosDbAccountUrl = envVars["DOCUMENT_ENDPOINT"];
-            string accountKey = envVars["ACCOUNT_KEY"];
+            string cosmosDbAccountUrl = Environment.GetEnvironmentVariable("DOCUMENT_ENDPOINT") ?? "";
+            string accountKey = Environment.GetEnvironmentVariable("ACCOUNT_KEY") ?? "";
 
             if (string.IsNullOrEmpty(cosmosDbAccountUrl) || string.IsNullOrEmpty(accountKey))
                 return new ChatHistoryResult(ChatMessages: null, ErrorMessage: "Please set the DOCUMENT_ENDPOINT and ACCOUNT_KEY environment variables.", IsSuccess: false);
