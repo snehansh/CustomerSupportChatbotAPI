@@ -15,7 +15,8 @@ builder.Services.AddCors(options =>
     options.AddPolicy(name: MyAllowSpecificOrigins,
         policy =>
         {
-            policy.WithOrigins("http://localhost:5173")
+            // policy.WithOrigins("http://localhost:5173")
+            policy.WithOrigins("https://customer-support-chatbot.pages.dev/")
                 .AllowAnyHeader()
                 .AllowAnyMethod();
         }
