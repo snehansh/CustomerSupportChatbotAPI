@@ -33,11 +33,12 @@ string endpoint = Environment.GetEnvironmentVariable("OPENAI_ENDPOINT")
     ?? throw new InvalidOperationException("OPENAI_ENDPOINT environment variable is not set.");
 string deployment = Environment.GetEnvironmentVariable("OPENAI_MODEL")
     ?? throw new InvalidOperationException("OPENAI_MODEL environment variable is not set.");
-string apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
-    ?? throw new InvalidOperationException("OPENAI_API_KEY environment variable is not set.");
+string azureClientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID") ?? "";
+string azureClientSecret = Environment.GetEnvironmentVariable("AZURE_CLIENT_SECRET") ?? "";
+string azureTenantId = Environment.GetEnvironmentVariable("AZURE_TENANT_ID") ?? "";
 
 IChatClient chatClient =
-    new AzureOpenAIClient(new Uri(endpoint), new System.ClientModel.ApiKeyCredential(apiKey))
+    new AzureOpenAIClient(new Uri(endpoint), new DefaultAzureCredential())
     .GetChatClient(deployment)
     .AsIChatClient();
 
@@ -106,7 +107,6 @@ public class ChatMessageDto
         Role = chatMessage.Role;
         Content = chatMessage?.Text;
     }
-
 }
 
 public record ChatEntity(string id, string category, List<ChatMessageDto> ChatMessages);
@@ -122,19 +122,23 @@ public class ChatRepository()
             string databaseName = "myDatabase"; // Name of the database to create or use
             string containerName = "myContainer"; // Name of the container to create or use
 
-            // Load environment variables from .env file
+            // Load environment variables from .env file (no-op if file doesn't exist)
             DotEnv.Load();
             string cosmosDbAccountUrl = Environment.GetEnvironmentVariable("DOCUMENT_ENDPOINT") ?? "";
-            string accountKey = Environment.GetEnvironmentVariable("ACCOUNT_KEY") ?? "";
+            string azureClientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID") ?? "";
+            string azureClientSecret = Environment.GetEnvironmentVariable("AZURE_CLIENT_SECRET") ?? "";
+            string azureTenantId = Environment.GetEnvironmentVariable("AZURE_TENANT_ID") ?? "";
 
-            if (string.IsNullOrEmpty(cosmosDbAccountUrl) || string.IsNullOrEmpty(accountKey))
-            {
-                Console.WriteLine("Please set the DOCUMENT_ENDPOINT and ACCOUNT_KEY environment variables.");
-                return "Please set the DOCUMENT_ENDPOINT and ACCOUNT_KEY environment variables.";
-            }
+            if (
+                string.IsNullOrEmpty(cosmosDbAccountUrl) ||
+                string.IsNullOrEmpty(azureClientId) ||
+                string.IsNullOrEmpty(azureClientSecret) ||
+                string.IsNullOrEmpty(azureTenantId)
+                )
+                return "Required environmemt variables are missing.";
 
             // CREATE THE COSMOS DB CLIENT USING THE ACCOUNT URL AND KEY
-            CosmosClient cosmosClient = new(accountEndpoint: cosmosDbAccountUrl, authKeyOrResourceToken: accountKey);
+            CosmosClient cosmosClient = new(accountEndpoint: cosmosDbAccountUrl, tokenCredential: new DefaultAzureCredential());
 
             // CREATE A DATABASE IF IT DOESN'T ALREADY EXIST
             Database database = await cosmosClient.CreateDatabaseIfNotExistsAsync(databaseName);
@@ -182,17 +186,24 @@ public class ChatRepository()
             string databaseName = "myDatabase"; // Name of the database to create or use
             string containerName = "myContainer"; // Name of the container to create or use
 
-            // Load environment variables from .env file
+            // Load environment variables from .env file (no-op if file doesn't exist)
             DotEnv.Load();
             string cosmosDbAccountUrl = Environment.GetEnvironmentVariable("DOCUMENT_ENDPOINT") ?? "";
-            string accountKey = Environment.GetEnvironmentVariable("ACCOUNT_KEY") ?? "";
+            string azureClientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID") ?? "";
+            string azureClientSecret = Environment.GetEnvironmentVariable("AZURE_CLIENT_SECRET") ?? "";
+            string azureTenantId = Environment.GetEnvironmentVariable("AZURE_TENANT_ID") ?? "";
 
-            if (string.IsNullOrEmpty(cosmosDbAccountUrl) || string.IsNullOrEmpty(accountKey))
-                return new ChatHistoryResult(ChatMessages: null, ErrorMessage: "Please set the DOCUMENT_ENDPOINT and ACCOUNT_KEY environment variables.", IsSuccess: false);
+            if (
+                string.IsNullOrEmpty(cosmosDbAccountUrl) ||
+                string.IsNullOrEmpty(azureClientId) ||
+                string.IsNullOrEmpty(azureClientSecret) ||
+                string.IsNullOrEmpty(azureTenantId)
+                )
+                return new ChatHistoryResult(ChatMessages: null, ErrorMessage: "Required environmemt variables are missing.", IsSuccess: false);
 
 
             // CREATE THE COSMOS DB CLIENT USING THE ACCOUNT URL AND KEY
-            CosmosClient cosmosClient = new(accountEndpoint: cosmosDbAccountUrl, authKeyOrResourceToken: accountKey);
+            CosmosClient cosmosClient = new(accountEndpoint: cosmosDbAccountUrl, tokenCredential: new DefaultAzureCredential());
 
 
             // CREATE A DATABASE IF IT DOESN'T ALREADY EXIST
