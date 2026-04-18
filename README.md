@@ -5,3 +5,4 @@ This project is part of a Simple Chat App.
 
 [![Watch the video](https://img.youtube.com/vi/KDsKQ8y6b20/maxresdefault.jpg)](https://www.youtube.com/watch?v=KDsKQ8y6b20)
 
+Related repo: https://github.com/snehansh/customer-support-chatbot
